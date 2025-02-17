@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="id"> 
+ <head> 
+  <meta charset="UTF-8"> 
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+  <title>To-Do List</title> 
+  <link rel="stylesheet" href="Styles.css"> 
+ <style type="text/css" id="dcoder_stylesheet">/* Style dasar*/
+body {
+   background: #f4f4f4;
+   font-family: Arial, sans-serif;
+   text-align: center;
+   margin-top: 50px;
+}
+
+
+todo-container {
+  background: white;
+  width: 90%;
+  max-width: 450px;
+  margin: 0 auto;
+  border: 2px solid #2e60ea
+  padding: 20px;
+  color: black;
+  border-radius; 10px;
+  box-shadow: 0px 4px 10px rgba(0,0,0,0.2);
+}
+
+h1 {
+  margin-bottom: 15px;
+  font-size: 24px;
+  color: #2e60ea;
+}
+
+#todo-form {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 15px;
+}
+
+#input-box {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 16px;
+}
+
+#select-button {
+  padding: 10px;
+  border-radius: 5px;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  transition-duration: 0.3s;
+  
+#category {
+  background-color: rgba(255, 255, 255, 0);
+  color: black;
+}
+
+#input-button {
+  background-color: #2e60ea;
+  color: black;
+}
+
+#input-button:hover {
+  background-color: #9eb7fd;
+}
+
+#filter-section {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    align-items: center;
+}
+
+#clear-all {
+    background-color: red;
+    color: white;
+    padding: 5px 10px;
+}
+
+/* Task List */
+ul {
+    list-style: none;
+    padding: 0;
+    margin-top: 10px;
+    text-align: left;
+}
+
+li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    transition: transform 0.2s ease-in-out;
+    position: relative;
+    border: 2px solid transparent; /* Tambahkan border agar terlihat rapi */
+}
+
+li:hover {
+    transform: scale(1.02);
+    border: 2px solid #fff; /* Highlight saat hover */
+}
+
+.completed {
+    text-decoration: line-through;
+    opacity: 0.7;
+}
+
+/* Grup tombol agar tetap di kanan */
+.button-group {
+    display: flex;
+    gap: 5px; /* Beri jarak antar tombol */
+    position: absolute;
+    right: 10px; /* Tetapkan posisi di kanan */
+}
+
+/* Tombol Edit & Hapus */
+.edit-btn, .delete-btn {
+    cursor: pointer;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 14px;
+    border: none;
+    transition: 0.3s;
+}
+
+
+/* Dark Mode */
+.dark-mode {
+    background-color: #222;
+    color: #fff;
+}
+
+.dark-mode #todo-container {
+    background-color: #333;
+    color: white;
+}</style></head> 
+  <body> 
+   <div id="todo-container"> 
+    <header> 
+    <h1>To-Do List</h1> <button id="dark-mode-toggle">🌙</button> 
+    </header> 
+   <div id="todo-form"> 
+    <input type="text" id="input-box" placeholder="Tambahkan tugas..."> <select id="category"> <option value="Work">Work</option> <option value="Personal">Personal</option> <option value="Study">Study</option> </select> 
+    <input type="color" id="color-picker" value="#ff9880"> <button id="input-button" onclick="addTask()">Tambah</button> 
+   </div> 
+   <div id="filter-section"> <label for="filter">Filter</label> <select id="filter"> <option value="all">Semua</option> <option value="Work">Work</option> <option value="Personal">Personal</option> <option value="Study">Study</option> </select> <button id="clear-all">Hapus Semua</button> 
+   </div> 
+ 
+   <h2>Daftar Tugas</h2> 
+   <ul id="list-container"></ul> 
+ 
+   <div class="counter-container">
+     Selesai: <span id="completed-counter">0</span> Belum Selesai: <span id="uncompleted-counter">0</span> 
+   </div> 
+  </div> 
+  <script src="script.js"></script> 
+ 
+<script type="text/javascript" id="dcoder_script">const inputBox = document.getElementById("input-box");
+const listContainer = document.getElementById("list-container");
+const categorySelect = document.getElementById("category");
+const filterSelect = document.getElementById("filter");
+const completedCounter = document.getElementById("completed-counter");
+const uncompletedCounter = document.getElementById("uncompleted-counter");
+const clearAllButton = document.getElementById("clear-all");
+const colorPicker = document.getElementById("color-picker");
+
+// Dark Mode Toggle
+const darkModeButton = document.getElementById("dark-mode-toggle");
+darkModeButton.addEventListener("click", () => {
+    document.body.classList.toggle("dark-mode");
+});
+
+// Simpan & Muat Tugas dari Local Storage
+function saveTasks() {
+    const tasks = [];
+    document.querySelectorAll("#list-container li").forEach(li => {
+        tasks.push({
+            text: li.querySelector(".task-text").innerText,
+            completed: li.classList.contains("completed"),
+            category: li.dataset.category,
+            color: li.style.backgroundColor
+        });
+    });
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+}
+
+function loadTasks() {
+    listContainer.innerHTML = ""; // Kosongkan daftar sebelum memuat ulang
+    const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+    tasks.forEach(task => addTask(task.text, task.completed, task.color, task.category, false));
+    updateCounter();
+}
+
+// Tambah tugas baru
+function addTask(taskText = null, completed = false, taskColor = null, taskCategory = null, save = true) {
+    if (!taskText) {
+        taskText = inputBox.value.trim();
+        taskColor = colorPicker.value;
+        taskCategory = categorySelect.value;
+        if (!taskText) {
+            alert("Silakan masukkan tugas!");
+            return;
+        }
+    }
+
+    const li = document.createElement("li");
+    li.style.backgroundColor = taskColor;
+    li.classList.add("task-item");
+    li.dataset.category = taskCategory;
+
+    
+    li.innerHTML = `
+        <label style="flex: 1; display: flex; align-items: center;">
+            <input type="checkbox" class="task-checkbox" ${completed ? "checked" : ""}>
+            <span class="task-text">${taskText} (${taskCategory})</span>
+        </label>
+        <div class="button-group">
+            <button class="edit-btn">✏️</button>
+            <button class="delete-btn">❌</button>
+        </div>
+    `;
+
+    if (completed) {
+        li.classList.add("completed");
+    }
+
+    listContainer.appendChild(li);
+    inputBox.value = "";
+
+    if (save) saveTasks();
+    updateCounter();
+
+    // Event Listener untuk checkbox
+    const checkbox = li.querySelector(".task-checkbox");
+    checkbox.addEventListener("change", function () {
+        li.classList.toggle("completed", checkbox.checked);
+        saveTasks();
+        updateCounter();
+        filterTasks(); // Perbarui tampilan setelah mengubah status
+    });
+
+    // Edit Tugas
+    li.querySelector(".edit-btn").addEventListener("click", function () {
+        const newText = prompt("Edit tugas:", taskText);
+        if (newText) {
+            li.querySelector(".task-text").innerText = `${newText} (${taskCategory})`;
+            saveTasks();
+        }
+    });
+
+    // Hapus Tugas
+    li.querySelector(".delete-btn").addEventListener("click", function () {
+        if (confirm("Hapus tugas ini?")) {
+            li.remove();
+            saveTasks();
+            updateCounter();
+        }
+    });
+
+    filterTasks(); // Pastikan filter tetap berlaku setelah menambah tugas
+}
+
+// Perbaiki fungsi Filter Tugas
+function filterTasks() {
+    const filterValue = filterSelect.value;
+    document.querySelectorAll(".task-item").forEach(li => {
+        const category = li.dataset.category;
+        const isCompleted = li.classList.contains("completed");
+
+        if (filterValue === "all" || category === filterValue) {
+            li.style.display = "flex";
+        } else {
+            li.style.display = "none";
+        }
+    });
+}
+
+// Perbarui Jumlah Selesai/Belum Selesai
+function updateCounter() {
+    const totalTasks = document.querySelectorAll(".task-item").length;
+    const completedTasks = document.querySelectorAll(".task-item.completed").length;
+    const uncompletedTasks = totalTasks - completedTasks;
+
+    completedCounter.innerText = completedTasks;
+    uncompletedCounter.innerText = uncompletedTasks;
+}
+
+// Event Listener untuk Filter
+filterSelect.addEventListener("change", filterTasks);
+
+// Event Listener untuk Hapus Semua
+clearAllButton.addEventListener("click", () => {
+    if (confirm("Hapus semua tugas?")) {
+        listContainer.innerHTML = "";
+        localStorage.removeItem("tasks");
+        updateCounter();
+    }
+});
+
+// Panggil fungsi untuk memuat tugas saat halaman dimuat
+loadTasks();</script></body></html>
